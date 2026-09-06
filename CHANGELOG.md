@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.0](https://github.com/bookhoard/bookhoarder/compare/v0.19.0...v0.20.0) (2026-09-06)
+
+
+### Features
+
+* replace Drawer components with SideDrawer for consistent UI across panels ([4f06807](https://github.com/bookhoard/bookhoarder/commit/4f068076f62081a3714ac3bf7f0be44509e995b7))
+
 ## [0.19.0](https://github.com/bookhoard/bookhoarder/compare/v0.18.0...v0.19.0) (2026-09-01)
 
 
