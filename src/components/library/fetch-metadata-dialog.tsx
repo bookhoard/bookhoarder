@@ -4,14 +4,13 @@ import * as React from "react";
 import Image from "next/image";
 import { Loader2, AlertCircle, BookOpen } from "lucide-react";
 import {
-  Drawer,
-  DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
   DrawerFooter,
   DrawerClose,
 } from "@/components/ui/drawer";
+import { SideDrawer } from "@/components/side-drawer";
 import {
   Carousel,
   CarouselContent,
@@ -42,7 +41,9 @@ export function FetchMetadataDialog({
 }: FetchMetadataDialogProps) {
   const [status, setStatus] = React.useState<Status>("loading");
   const [error, setError] = React.useState<string | null>(null);
-  const [candidates, setCandidates] = React.useState<MetadataLookupResult[]>([]);
+  const [candidates, setCandidates] = React.useState<MetadataLookupResult[]>(
+    [],
+  );
   const [applying, setApplying] = React.useState(false);
 
   const [api, setApi] = React.useState<CarouselApi>();
@@ -55,7 +56,9 @@ export function FetchMetadataDialog({
 
   // description text per candidate index — undefined = not fetched yet,
   // null = fetched but Open Library had nothing
-  const [descriptions, setDescriptions] = React.useState<Record<number, string | null>>({});
+  const [descriptions, setDescriptions] = React.useState<
+    Record<number, string | null>
+  >({});
   const [descriptionLoading, setDescriptionLoading] = React.useState(false);
 
   React.useEffect(() => {
@@ -127,7 +130,10 @@ export function FetchMetadataDialog({
     // Some editions carry their own description — use it directly instead
     // of fetching the (identical, language-independent) work-level one.
     if (candidate.description) {
-      setDescriptions((prev) => ({ ...prev, [selectedIndex]: candidate.description! }));
+      setDescriptions((prev) => ({
+        ...prev,
+        [selectedIndex]: candidate.description!,
+      }));
       return;
     }
     if (!candidate.key) return;
@@ -172,164 +178,173 @@ export function FetchMetadataDialog({
   };
 
   return (
-    <Drawer
+    <SideDrawer
       open={open}
       onOpenChange={onOpenChange}
       modal={false}
       disablePointerDismissal
-      swipeDirection="right"
     >
-      <DrawerContent className="my-3 border-t border-b">
-        <DrawerHeader>
-          <DrawerTitle>Fetch Metadata</DrawerTitle>
-          <DrawerDescription>
-            {candidates.length > 1
-              ? `${candidates.length} results from Open Library — pick the right edition.`
-              : "Results from Open Library."}
-          </DrawerDescription>
-        </DrawerHeader>
+      <DrawerHeader>
+        <DrawerTitle>Fetch Metadata</DrawerTitle>
+        <DrawerDescription>
+          {candidates.length > 1
+            ? `${candidates.length} results from Open Library — pick the right edition.`
+            : "Results from Open Library."}
+        </DrawerDescription>
+      </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto px-4">
-          {status === "loading" && (
-            <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" />
-              Searching Open Library…
-            </div>
-          )}
+      <div className="flex-1 overflow-y-auto px-4">
+        {status === "loading" && (
+          <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" />
+            Searching Open Library…
+          </div>
+        )}
 
-          {status === "error" && (
-            <div className="flex items-center gap-2 py-6 text-sm text-destructive">
-              <AlertCircle className="size-4 shrink-0" />
-              {error}
-            </div>
-          )}
+        {status === "error" && (
+          <div className="flex items-center gap-2 py-6 text-sm text-destructive">
+            <AlertCircle className="size-4 shrink-0" />
+            {error}
+          </div>
+        )}
 
-          {status === "ready" && candidates.length > 0 && (
-            <div className="flex flex-col gap-4 py-4">
-              <Carousel setApi={setApi} className="px-8">
-                <CarouselContent>
-                  {candidates.map((c, i) => (
-                    <CarouselItem key={i} className="basis-full">
-                      <div className="flex flex-col items-center gap-2 rounded-lg border border-border p-4">
-                        <div className="relative h-40 w-28 shrink-0 overflow-hidden rounded border border-border bg-muted">
-                          {c.coverUrl ? (
-                            <Image
-                              src={c.coverUrl}
-                              alt={c.title ?? "Cover"}
-                              fill
-                              sizes="112px"
-                              className="object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center">
-                              <BookOpen className="size-6 text-foreground/15" strokeWidth={1.5} />
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-center">
-                          <p className="line-clamp-2 text-sm font-medium">
-                            {c.title ?? "Untitled"}
-                          </p>
-                          {c.authors && c.authors.length > 0 && (
-                            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                              {c.authors.join(", ")}
-                            </p>
-                          )}
-                          {c.language && (
-                            <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                              {c.language}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                <CarouselPrevious className="-left-1" />
-                <CarouselNext className="-right-1" />
-              </Carousel>
-              <p className="-mt-2 text-center text-xs text-muted-foreground">
-                {selectedIndex + 1} / {candidates.length}
-              </p>
-
-              {candidate && (
-                <div className="flex flex-col gap-3">
-                  {candidate.coverUrl && (
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
-                      <div>
-                        <p className="text-sm font-medium">Cover</p>
-                        <p className="text-xs text-muted-foreground">
-                          {book.hasCover ? "Replaces your existing cover" : "No cover set yet"}
-                        </p>
-                      </div>
-                      <Switch checked={useCover} onCheckedChange={setUseCover} />
-                    </div>
-                  )}
-
-                  {candidate.title && (
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">Title</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {candidate.title}
-                        </p>
-                      </div>
-                      <Switch checked={useTitle} onCheckedChange={setUseTitle} />
-                    </div>
-                  )}
-
-                  {candidateAuthor && (
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">Author</p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {candidateAuthor}
-                        </p>
-                      </div>
-                      <Switch checked={useAuthor} onCheckedChange={setUseAuthor} />
-                    </div>
-                  )}
-
-                  {candidate.key && (
-                    <div className="rounded-lg border border-border p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-medium">Description</p>
-                        <Switch
-                          checked={useDescription}
-                          onCheckedChange={setUseDescription}
-                          disabled={!description}
-                        />
-                      </div>
-                      <div className="mt-2 max-h-48 overflow-y-auto text-xs leading-relaxed text-muted-foreground">
-                        {descriptionLoading ? (
-                          <span className="flex items-center gap-1.5">
-                            <Loader2 className="size-3 animate-spin" />
-                            Loading…
-                          </span>
-                        ) : description ? (
-                          description
+        {status === "ready" && candidates.length > 0 && (
+          <div className="flex flex-col gap-4 py-4">
+            <Carousel setApi={setApi} className="px-8">
+              <CarouselContent>
+                {candidates.map((c, i) => (
+                  <CarouselItem key={i} className="basis-full">
+                    <div className="flex flex-col items-center gap-2 rounded-lg border border-border p-4">
+                      <div className="relative h-40 w-28 shrink-0 overflow-hidden rounded border border-border bg-muted">
+                        {c.coverUrl ? (
+                          <Image
+                            src={c.coverUrl}
+                            alt={c.title ?? "Cover"}
+                            fill
+                            sizes="112px"
+                            className="object-cover"
+                          />
                         ) : (
-                          <span className="italic">No description available</span>
+                          <div className="flex h-full items-center justify-center">
+                            <BookOpen
+                              className="size-6 text-foreground/15"
+                              strokeWidth={1.5}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <p className="line-clamp-2 text-sm font-medium">
+                          {c.title ?? "Untitled"}
+                        </p>
+                        {c.authors && c.authors.length > 0 && (
+                          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                            {c.authors.join(", ")}
+                          </p>
+                        )}
+                        {c.language && (
+                          <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                            {c.language}
+                          </span>
                         )}
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="-left-1" />
+              <CarouselNext className="-right-1" />
+            </Carousel>
+            <p className="-mt-2 text-center text-xs text-muted-foreground">
+              {selectedIndex + 1} / {candidates.length}
+            </p>
 
-              {error && <p className="text-xs text-destructive">{error}</p>}
-            </div>
-          )}
-        </div>
+            {candidate && (
+              <div className="flex flex-col gap-3">
+                {candidate.coverUrl && (
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                    <div>
+                      <p className="text-sm font-medium">Cover</p>
+                      <p className="text-xs text-muted-foreground">
+                        {book.hasCover
+                          ? "Replaces your existing cover"
+                          : "No cover set yet"}
+                      </p>
+                    </div>
+                    <Switch checked={useCover} onCheckedChange={setUseCover} />
+                  </div>
+                )}
 
-        <DrawerFooter className="sm:flex-row sm:justify-end">
-          <DrawerClose render={<Button variant="outline">Cancel</Button>} />
-          <Button onClick={handleApply} disabled={status !== "ready" || applying} className="gap-2">
-            {applying && <Loader2 className="size-4 animate-spin" />}
-            Apply
-          </Button>
-        </DrawerFooter>
-      </DrawerContent>
-    </Drawer>
+                {candidate.title && (
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">Title</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {candidate.title}
+                      </p>
+                    </div>
+                    <Switch checked={useTitle} onCheckedChange={setUseTitle} />
+                  </div>
+                )}
+
+                {candidateAuthor && (
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">Author</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {candidateAuthor}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={useAuthor}
+                      onCheckedChange={setUseAuthor}
+                    />
+                  </div>
+                )}
+
+                {candidate.key && (
+                  <div className="rounded-lg border border-border p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium">Description</p>
+                      <Switch
+                        checked={useDescription}
+                        onCheckedChange={setUseDescription}
+                        disabled={!description}
+                      />
+                    </div>
+                    <div className="mt-2 max-h-48 overflow-y-auto text-xs leading-relaxed text-muted-foreground">
+                      {descriptionLoading ? (
+                        <span className="flex items-center gap-1.5">
+                          <Loader2 className="size-3 animate-spin" />
+                          Loading…
+                        </span>
+                      ) : description ? (
+                        description
+                      ) : (
+                        <span className="italic">No description available</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {error && <p className="text-xs text-destructive">{error}</p>}
+          </div>
+        )}
+      </div>
+
+      <DrawerFooter className="sm:flex-row sm:justify-end">
+        <DrawerClose render={<Button variant="outline">Cancel</Button>} />
+        <Button
+          onClick={handleApply}
+          disabled={status !== "ready" || applying}
+          className="gap-2"
+        >
+          {applying && <Loader2 className="size-4 animate-spin" />}
+          Apply
+        </Button>
+      </DrawerFooter>
+    </SideDrawer>
   );
 }

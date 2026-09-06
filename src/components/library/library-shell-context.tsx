@@ -63,8 +63,19 @@ export function LibraryShellProvider({
   // The drawer's open/closed state (and which book it shows) lives on the
   // URL — ?book=<id> — rather than in local state, so it's shareable,
   // survives a refresh, and the browser back button closes it.
-  const selectedId = searchParams.get("book");
+  const urlSelectedId = searchParams.get("book");
+  // router.replace/push is async — a swipe-to-close needs `open` to flip to
+  // false in the same tick it's requested, or Base UI's release animation
+  // sees "still open" for a frame and snaps back before the URL catches up
+  // and it closes for real, reading as a jump-then-close glitch. This mirrors
+  // a close locally the instant it's requested; the effect below clears it
+  // once the URL actually reflects the close (a no-op by then).
+  const [closingOverride, setClosingOverride] = React.useState(false);
+  const selectedId = closingOverride ? null : urlSelectedId;
   const selected = books.find((b) => b.id === selectedId) ?? null;
+  React.useEffect(() => {
+    if (closingOverride && urlSelectedId === null) setClosingOverride(false);
+  }, [closingOverride, urlSelectedId]);
 
   // kept around during the close transition so the panel doesn't blank out
   // while it's sliding off-screen
@@ -90,6 +101,7 @@ export function LibraryShellProvider({
 
   const setBookParam = React.useCallback(
     (id: string | null, opts?: { replace?: boolean }) => {
+      setClosingOverride(id === null);
       const params = new URLSearchParams(searchParams.toString());
       if (id) params.set("book", id);
       else params.delete("book");
