@@ -1,4 +1,5 @@
 import { openLibraryUserAgent } from "./metadata/user-agent";
+import { fetchJson } from "./metadata/http";
 
 export type TrendingPeriod = "daily" | "weekly" | "monthly";
 
@@ -31,25 +32,19 @@ export async function fetchTrendingBooks(
   period: TrendingPeriod = "weekly",
   limit = 24
 ): Promise<TrendingBook[]> {
-  try {
-    const res = await fetch(`https://openlibrary.org/trending/${period}.json`, {
-      headers: { "User-Agent": openLibraryUserAgent() },
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) return [];
-    const data = (await res.json()) as OpenLibraryTrendingResponse;
-    return (data.works ?? [])
-      .filter((w) => w.key && w.title)
-      .slice(0, limit)
-      .map((w) => ({
-        key: w.key!,
-        title: w.title!,
-        authors: w.author_name,
-        coverUrl: w.cover_i
-          ? `https://covers.openlibrary.org/b/id/${w.cover_i}-M.jpg`
-          : undefined,
-      }));
-  } catch {
-    return [];
-  }
+  const data = await fetchJson<OpenLibraryTrendingResponse>(
+    `https://openlibrary.org/trending/${period}.json`,
+    { headers: { "User-Agent": openLibraryUserAgent() }, next: { revalidate: 3600 } }
+  );
+  return (data?.works ?? [])
+    .filter((w) => w.key && w.title)
+    .slice(0, limit)
+    .map((w) => ({
+      key: w.key!,
+      title: w.title!,
+      authors: w.author_name,
+      coverUrl: w.cover_i
+        ? `https://covers.openlibrary.org/b/id/${w.cover_i}-M.jpg`
+        : undefined,
+    }));
 }

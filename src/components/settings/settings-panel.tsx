@@ -16,6 +16,7 @@ import { useLibraryShell } from "@/components/library/library-shell-context";
 import { ManageProfilesPanel } from "./manage-profiles-panel";
 import { PROFILE_COLORS, type PublicProfile } from "@/lib/profiles/types";
 import type { PublicAppSettings, SmtpEncryption } from "@/lib/settings/types";
+import { METADATA_PROVIDER_INFO, type MetadataProviderId } from "@/lib/metadata/types";
 
 interface SettingsPanelProps {
   settings: PublicAppSettings;
@@ -149,6 +150,7 @@ export function SettingsPanel({ settings, profile }: SettingsPanelProps) {
 
   // metadata
   const [candidateLimit, setCandidateLimit] = React.useState(settings.metadataCandidateLimit);
+  const [metadataProviders, setMetadataProviders] = React.useState(settings.metadataProviders);
 
   // trending
   const [trendingEnabled, setTrendingEnabled] = React.useState(settings.trendingEnabled);
@@ -304,6 +306,25 @@ export function SettingsPanel({ settings, profile }: SettingsPanelProps) {
       if (!res.ok) throw new Error();
       notifySaved();
     } catch {
+      toast.add({ title: "Couldn't save settings", type: "error" });
+    }
+  };
+
+  const toggleMetadataProvider = async (id: MetadataProviderId, enabled: boolean) => {
+    const next = enabled
+      ? [...metadataProviders, id]
+      : metadataProviders.filter((p) => p !== id);
+    setMetadataProviders(next);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ metadataProviders: next }),
+      });
+      if (!res.ok) throw new Error();
+      notifySaved();
+    } catch {
+      setMetadataProviders(metadataProviders);
       toast.add({ title: "Couldn't save settings", type: "error" });
     }
   };
@@ -612,7 +633,7 @@ export function SettingsPanel({ settings, profile }: SettingsPanelProps) {
           >
             <SettingRow
               title="Candidates to fetch"
-              description="How many Open Library results to show per lookup (1–20)."
+              description="How many results to show per lookup, per provider (1–20)."
             >
               <Input
                 type="number"
@@ -628,6 +649,22 @@ export function SettingsPanel({ settings, profile }: SettingsPanelProps) {
                 }}
                 className="w-20"
               />
+            </SettingRow>
+            <SettingRow
+              title="Providers"
+              description="Which sources to search. Results from every enabled provider are pooled together."
+            >
+              <div className="flex flex-col gap-3">
+                {METADATA_PROVIDER_INFO.map(({ id, label }) => (
+                  <div key={id} className="flex items-center justify-between gap-3">
+                    <span className="text-sm">{label}</span>
+                    <Switch
+                      checked={metadataProviders.includes(id)}
+                      onCheckedChange={(enabled) => toggleMetadataProvider(id, enabled)}
+                    />
+                  </div>
+                ))}
+              </div>
             </SettingRow>
           </SectionCard>
         )}

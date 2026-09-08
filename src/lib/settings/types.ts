@@ -1,3 +1,5 @@
+import { ALL_METADATA_PROVIDER_IDS, type MetadataProviderId } from "@/lib/metadata/types";
+
 export type SmtpEncryption = "none" | "starttls" | "ssl";
 
 export interface SmtpSettings {
@@ -11,8 +13,10 @@ export interface SmtpSettings {
 }
 
 export interface AppSettings {
-  /** how many candidates the Fetch Metadata drawer requests from Open Library */
+  /** how many candidates the Fetch Metadata drawer requests per provider */
   metadataCandidateLimit: number;
+  /** which metadata providers the Fetch Metadata drawer searches */
+  metadataProviders: MetadataProviderId[];
   trendingEnabled: boolean;
   /** how many books each BookGrid (Library, Trending, shelves) shows per page */
   booksPerPage: number;
@@ -25,6 +29,7 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   metadataCandidateLimit: 10,
+  metadataProviders: [...ALL_METADATA_PROVIDER_IDS],
   trendingEnabled: true,
   booksPerPage: 50,
   searchResultLimit: 10,

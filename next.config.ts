@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "covers.openlibrary.org",
+        hostname: "*",
       },
     ],
   },

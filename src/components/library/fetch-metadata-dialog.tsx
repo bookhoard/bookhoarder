@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { Loader2, AlertCircle, BookOpen } from "lucide-react";
+import { Loader2, AlertCircle, BookOpen, SearchX } from "lucide-react";
 import {
   DrawerHeader,
   DrawerTitle,
@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { readNdjsonStream } from "@/lib/metadata/ndjson-client";
 import type { Book, BookRecord } from "@/lib/books/types";
-import type { MetadataLookupResult } from "@/lib/metadata/openlibrary";
+import type { MetadataCandidate, ProviderResultChunk } from "@/lib/metadata/types";
 
 interface FetchMetadataDialogProps {
   book: Book;
@@ -31,7 +32,7 @@ interface FetchMetadataDialogProps {
   onApplied: (book: BookRecord) => void;
 }
 
-type Status = "loading" | "ready" | "error";
+type Status = "loading" | "ready" | "empty" | "error";
 
 export function FetchMetadataDialog({
   book,
@@ -40,8 +41,9 @@ export function FetchMetadataDialog({
   onApplied,
 }: FetchMetadataDialogProps) {
   const [status, setStatus] = React.useState<Status>("loading");
+  const [streaming, setStreaming] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [candidates, setCandidates] = React.useState<MetadataLookupResult[]>(
+  const [candidates, setCandidates] = React.useState<MetadataCandidate[]>(
     [],
   );
   const [applying, setApplying] = React.useState(false);
@@ -64,25 +66,37 @@ export function FetchMetadataDialog({
   React.useEffect(() => {
     if (!open) return;
     setStatus("loading");
+    setStreaming(true);
     setError(null);
     setCandidates([]);
     setSelectedIndex(0);
     setDescriptions({});
 
-    fetch(`/api/books/${book.id}/metadata/candidates`)
+    const controller = new AbortController();
+    let sawAny = false;
+
+    fetch(`/api/books/${book.id}/metadata/candidates`, { signal: controller.signal })
       .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "No metadata found");
-        return data.candidates as MetadataLookupResult[];
-      })
-      .then((result) => {
-        setCandidates(result);
-        setStatus("ready");
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error ?? "No metadata found");
+        }
+        await readNdjsonStream<ProviderResultChunk<MetadataCandidate>>(res, (chunk) => {
+          if (chunk.results.length === 0) return;
+          sawAny = true;
+          setCandidates((prev) => [...prev, ...chunk.results]);
+          setStatus("ready");
+        });
+        if (!sawAny) setStatus("empty");
       })
       .catch((e) => {
+        if (controller.signal.aborted) return;
         setError((e as Error).message);
         setStatus("error");
-      });
+      })
+      .finally(() => setStreaming(false));
+
+    return () => controller.abort();
   }, [open, book.id]);
 
   React.useEffect(() => {
@@ -111,6 +125,10 @@ export function FetchMetadataDialog({
 
   const candidate = candidates[selectedIndex];
   const candidateAuthor = candidate?.authors?.join(", ");
+  const sourceLabels = React.useMemo(
+    () => [...new Set(candidates.map((c) => c.sourceLabel))].join(", "),
+    [candidates],
+  );
 
   const description = candidate ? descriptions[selectedIndex] : undefined;
 
@@ -136,7 +154,12 @@ export function FetchMetadataDialog({
       }));
       return;
     }
-    if (!candidate.key) return;
+    // Only Open Library needs a lazy per-edition fetch — every other
+    // provider already returns the full description inline (or has none).
+    if (candidate.source !== "openlibrary" || !candidate.key) {
+      setDescriptions((prev) => ({ ...prev, [selectedIndex]: null }));
+      return;
+    }
     const index = selectedIndex;
     setDescriptionLoading(true);
     fetch(`/api/metadata/description?key=${encodeURIComponent(candidate.key)}`)
@@ -188,8 +211,12 @@ export function FetchMetadataDialog({
         <DrawerTitle>Fetch Metadata</DrawerTitle>
         <DrawerDescription>
           {candidates.length > 1
-            ? `${candidates.length} results from Open Library — pick the right edition.`
-            : "Results from Open Library."}
+            ? `${candidates.length} results from ${sourceLabels} — pick the right edition.`
+            : candidates.length === 1
+              ? `1 result from ${sourceLabels}.`
+              : status === "empty"
+                ? "No metadata found."
+                : "Searching your enabled metadata providers."}
         </DrawerDescription>
       </DrawerHeader>
 
@@ -197,7 +224,7 @@ export function FetchMetadataDialog({
         {status === "loading" && (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            Searching Open Library…
+            Searching metadata providers…
           </div>
         )}
 
@@ -205,6 +232,13 @@ export function FetchMetadataDialog({
           <div className="flex items-center gap-2 py-6 text-sm text-destructive">
             <AlertCircle className="size-4 shrink-0" />
             {error}
+          </div>
+        )}
+
+        {status === "empty" && (
+          <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground">
+            <SearchX className="size-5" />
+            No metadata found for this book.
           </div>
         )}
 
@@ -242,11 +276,16 @@ export function FetchMetadataDialog({
                             {c.authors.join(", ")}
                           </p>
                         )}
-                        {c.language && (
-                          <span className="mt-1.5 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                            {c.language}
+                        <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1">
+                          <span className="inline-block rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium tracking-wide text-accent-foreground">
+                            {c.sourceLabel}
                           </span>
-                        )}
+                          {c.language && (
+                            <span className="inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                              {c.language}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CarouselItem>
@@ -255,8 +294,14 @@ export function FetchMetadataDialog({
               <CarouselPrevious className="-left-1" />
               <CarouselNext className="-right-1" />
             </Carousel>
-            <p className="-mt-2 text-center text-xs text-muted-foreground">
+            <p className="-mt-2 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
               {selectedIndex + 1} / {candidates.length}
+              {streaming && (
+                <span className="flex items-center gap-1">
+                  <Loader2 className="size-3 animate-spin" />
+                  still searching…
+                </span>
+              )}
             </p>
 
             {candidate && (
@@ -302,30 +347,28 @@ export function FetchMetadataDialog({
                   </div>
                 )}
 
-                {candidate.key && (
-                  <div className="rounded-lg border border-border p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium">Description</p>
-                      <Switch
-                        checked={useDescription}
-                        onCheckedChange={setUseDescription}
-                        disabled={!description}
-                      />
-                    </div>
-                    <div className="mt-2 max-h-48 overflow-y-auto text-xs leading-relaxed text-muted-foreground">
-                      {descriptionLoading ? (
-                        <span className="flex items-center gap-1.5">
-                          <Loader2 className="size-3 animate-spin" />
-                          Loading…
-                        </span>
-                      ) : description ? (
-                        description
-                      ) : (
-                        <span className="italic">No description available</span>
-                      )}
-                    </div>
+                <div className="rounded-lg border border-border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium">Description</p>
+                    <Switch
+                      checked={useDescription}
+                      onCheckedChange={setUseDescription}
+                      disabled={!description}
+                    />
                   </div>
-                )}
+                  <div className="mt-2 max-h-48 overflow-y-auto text-xs leading-relaxed text-muted-foreground">
+                    {descriptionLoading ? (
+                      <span className="flex items-center gap-1.5">
+                        <Loader2 className="size-3 animate-spin" />
+                        Loading…
+                      </span>
+                    ) : description ? (
+                      description
+                    ) : (
+                      <span className="italic">No description available</span>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

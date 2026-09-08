@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSettings, updateSettings, type SettingsPatch } from "@/lib/settings/store";
 import { toPublicSettings } from "@/lib/settings/types";
 import { getActiveProfile } from "@/lib/profiles/store";
+import { ALL_METADATA_PROVIDER_IDS, type MetadataProviderId } from "@/lib/metadata/types";
 
 export async function GET() {
   const settings = await getSettings();
@@ -32,6 +33,13 @@ export async function PATCH(request: Request) {
       );
     }
     patch.metadataCandidateLimit = n;
+  }
+
+  if (Array.isArray(body.metadataProviders)) {
+    const valid = new Set<string>(ALL_METADATA_PROVIDER_IDS);
+    patch.metadataProviders = body.metadataProviders.filter(
+      (id): id is MetadataProviderId => typeof id === "string" && valid.has(id)
+    );
   }
 
   if (typeof body.trendingEnabled === "boolean") {

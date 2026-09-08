@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchOpenLibraryDescription, lookupOpenLibraryCandidates } from "./openlibrary";
+import { fetchOpenLibraryDescription, lookupOpenLibraryCandidates, lookupSimilarBooks } from "./openlibrary";
 
 const fetchMock = vi.fn();
 
@@ -24,6 +24,35 @@ function routeFetch(routes: Record<string, unknown>) {
     return jsonResponse(null, false);
   });
 }
+
+describe("network resilience", () => {
+  it("retries up to 3 times after dropped connections and still returns results", async () => {
+    let searchCalls = 0;
+    fetchMock.mockImplementation(async (url: string) => {
+      if (url.includes("/search.json?title=")) {
+        searchCalls++;
+        if (searchCalls < 3) throw new Error("read ECONNRESET");
+        return jsonResponse({ docs: [{ key: "/works/OL1W", title: "Dracula", author_name: ["Bram Stoker"] }] });
+      }
+      if (url.includes("/works/OL1W/editions.json")) {
+        return jsonResponse({
+          entries: [{ title: "Dracula", languages: [{ key: "/languages/eng" }], works: [{ key: "/works/OL1W" }] }],
+        });
+      }
+      if (url.includes("/works/OL1W.json")) return jsonResponse({});
+      return jsonResponse(null, false);
+    });
+
+    const candidates = await lookupOpenLibraryCandidates({ title: "Dracula", author: "Bram Stoker" });
+    expect(candidates).toHaveLength(1);
+    expect(searchCalls).toBe(3);
+  });
+
+  it("gives up gracefully (no throw) once every attempt fails", async () => {
+    fetchMock.mockRejectedValue(new Error("read ECONNRESET"));
+    await expect(lookupOpenLibraryCandidates({ title: "Dracula", author: "Bram Stoker" })).resolves.toEqual([]);
+  });
+});
 
 describe("lookupOpenLibraryCandidates", () => {
   it("adds an ISBN-matched candidate first when an ISBN is given", async () => {
@@ -127,6 +156,62 @@ describe("lookupOpenLibraryCandidates", () => {
 
     const candidates = await lookupOpenLibraryCandidates({ title: "Dracula", author: "Bram Stoker" }, 2);
     expect(candidates).toHaveLength(2);
+  });
+});
+
+describe("lookupSimilarBooks", () => {
+  it("browses the work's subjects and pools other works, skipping the book itself", async () => {
+    routeFetch({
+      "/search.json?title=": {
+        docs: [
+          {
+            key: "/works/OL1W",
+            title: "The Song of Achilles",
+            author_name: ["Madeline Miller"],
+            subject: ["Fiction", "Gay love", "Trojan War. fast (OCoLC)fst01157294", "nyt:trade-fiction-paperback=2020-08-30"],
+          },
+        ],
+      },
+      "/subjects/gay_love.json": {
+        works: [
+          { key: "/works/OL1W", title: "The Song of Achilles" },
+          { key: "/works/OL2W", title: "Circe", cover_id: 42, authors: [{ name: "Madeline Miller" }] },
+        ],
+      },
+    });
+
+    const results = await lookupSimilarBooks({ title: "The Song of Achilles", author: "Madeline Miller" });
+
+    expect(results).toEqual([
+      {
+        key: "/works/OL2W",
+        title: "Circe",
+        authors: ["Madeline Miller"],
+        coverUrl: "https://covers.openlibrary.org/b/id/42-M.jpg",
+      },
+    ]);
+  });
+
+  it("returns an empty list when no work matches", async () => {
+    routeFetch({ "/search.json?title=": { docs: [] } });
+    expect(await lookupSimilarBooks({ title: "Unknown", author: "Nobody" })).toEqual([]);
+  });
+
+  it("caps results at the given limit across multiple subjects", async () => {
+    routeFetch({
+      "/search.json?title=": {
+        docs: [{ key: "/works/OL1W", title: "Book", author_name: ["Author"], subject: ["Adventure", "Pirates"] }],
+      },
+      "/subjects/adventure.json": {
+        works: Array.from({ length: 5 }, (_, i) => ({ key: `/works/OLA${i}W`, title: `Adventure ${i}` })),
+      },
+      "/subjects/pirates.json": {
+        works: Array.from({ length: 5 }, (_, i) => ({ key: `/works/OLP${i}W`, title: `Pirates ${i}` })),
+      },
+    });
+
+    const results = await lookupSimilarBooks({ title: "Book", author: "Author" }, 3);
+    expect(results).toHaveLength(3);
   });
 });
 

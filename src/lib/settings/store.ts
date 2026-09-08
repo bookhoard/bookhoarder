@@ -1,4 +1,5 @@
 import { mutateJson, readJson } from "@/lib/store";
+import type { MetadataProviderId } from "@/lib/metadata/types";
 import { DEFAULT_SETTINGS, type AppSettings, type SmtpSettings } from "./types";
 
 const KEY = "settings.json";
@@ -15,6 +16,7 @@ export async function getSettings(): Promise<AppSettings> {
 
 export interface SettingsPatch {
   metadataCandidateLimit?: number;
+  metadataProviders?: MetadataProviderId[];
   trendingEnabled?: boolean;
   booksPerPage?: number;
   searchResultLimit?: number;

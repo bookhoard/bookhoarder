@@ -11,6 +11,7 @@ import {
   MoreVertical,
   Pencil,
   Sparkles,
+  Search,
   Send,
   CheckCircle2,
   Star,
@@ -21,6 +22,7 @@ import { BookCover } from "./book-cover";
 import { Badge } from "@/components/ui/badge";
 import { EditBookDrawer } from "./edit-book-drawer";
 import { FetchMetadataDialog } from "./fetch-metadata-dialog";
+import { FindSimilarDrawer } from "./find-similar-drawer";
 import { RateDialog } from "./rate-dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -75,6 +77,7 @@ export function DetailPanel({
 }: DetailPanelProps) {
   const [editDrawerOpen, setEditDrawerOpen] = React.useState(false);
   const [metadataDialogOpen, setMetadataDialogOpen] = React.useState(false);
+  const [findSimilarOpen, setFindSimilarOpen] = React.useState(false);
   const [rateDialogOpen, setRateDialogOpen] = React.useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
   const { activeProfile } = useLibraryShell();
@@ -196,6 +199,11 @@ export function DetailPanel({
               <Pencil className="size-3.5" />
               Edit
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setMetadataDialogOpen(true)}>
+              <Sparkles className="size-3.5" />
+              Fetch metadata
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onUpdateBook(book.id, { read: !book.read })}>
               <CheckCircle2 className="size-3.5" />
               {book.read ? "Mark as unread" : "Mark as read"}
@@ -204,10 +212,12 @@ export function DetailPanel({
               <Star className="size-3.5" />
               Rate{book.rating ? ` (${book.rating}/5)` : ""}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setMetadataDialogOpen(true)}>
-              <Sparkles className="size-3.5" />
-              Fetch metadata
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setFindSimilarOpen(true)}>
+              <Search className="size-3.5" />
+              Find similar
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onSendToEreader(book.id)}>
               <Send className="size-3.5" />
               Send to e-reader
@@ -295,6 +305,11 @@ export function DetailPanel({
         open={metadataDialogOpen}
         onOpenChange={setMetadataDialogOpen}
         onApplied={onMetadataApplied}
+      />
+      <FindSimilarDrawer
+        book={book}
+        open={findSimilarOpen}
+        onOpenChange={setFindSimilarOpen}
       />
       <RateDialog
         book={book}

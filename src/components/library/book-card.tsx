@@ -8,6 +8,7 @@ import {
   Pencil,
   Star,
   Sparkles,
+  Search,
   Send,
   Trash2,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import { BookTile, bookTileClassName } from "./book-tile";
 import { EditBookDrawer } from "./edit-book-drawer";
 import { RateDialog } from "./rate-dialog";
 import { FetchMetadataDialog } from "./fetch-metadata-dialog";
+import { FindSimilarDrawer } from "./find-similar-drawer";
 import {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -70,6 +72,7 @@ export function BookCard({ book, selected, onSelect, actions }: BookCardProps) {
   const [editDrawerOpen, setEditDrawerOpen] = React.useState(false);
   const [rateDialogOpen, setRateDialogOpen] = React.useState(false);
   const [metadataDialogOpen, setMetadataDialogOpen] = React.useState(false);
+  const [findSimilarOpen, setFindSimilarOpen] = React.useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false);
   const { activeProfile } = useLibraryShell();
   const isAdmin = activeProfile.role === "admin";
@@ -148,6 +151,11 @@ export function BookCard({ book, selected, onSelect, actions }: BookCardProps) {
           <Pencil className="size-3.5" />
           Edit
         </ContextMenuItem>
+        <ContextMenuItem onClick={() => setMetadataDialogOpen(true)}>
+          <Sparkles className="size-3.5" />
+          Fetch metadata
+        </ContextMenuItem>
+        <ContextMenuSeparator />
         <ContextMenuItem onClick={() => onUpdateBook(book.id, { read: !book.read })}>
           <CheckCircle2 className="size-3.5" />
           {book.read ? "Mark as unread" : "Mark as read"}
@@ -156,10 +164,12 @@ export function BookCard({ book, selected, onSelect, actions }: BookCardProps) {
           <Star className="size-3.5" />
           Rate{book.rating ? ` (${book.rating}/5)` : ""}
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => setMetadataDialogOpen(true)}>
-          <Sparkles className="size-3.5" />
-          Fetch metadata
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={() => setFindSimilarOpen(true)}>
+          <Search className="size-3.5" />
+          Find similar
         </ContextMenuItem>
+        <ContextMenuSeparator />
         <ContextMenuItem onClick={() => onSendToEreader(book.id)}>
           <Send className="size-3.5" />
           Send to e-reader
@@ -192,6 +202,11 @@ export function BookCard({ book, selected, onSelect, actions }: BookCardProps) {
         open={metadataDialogOpen}
         onOpenChange={setMetadataDialogOpen}
         onApplied={onMetadataApplied}
+      />
+      <FindSimilarDrawer
+        book={book}
+        open={findSimilarOpen}
+        onOpenChange={setFindSimilarOpen}
       />
       <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <AlertDialogContent>

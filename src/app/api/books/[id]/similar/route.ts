@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { readJson } from "@/lib/store";
-import { streamMetadataProviders } from "@/lib/metadata/providers/registry";
+import { streamSimilarBooks } from "@/lib/metadata/providers/registry";
 import { ndjsonResponse } from "@/lib/metadata/ndjson";
 import { getSettings } from "@/lib/settings/store";
 import type { BookRecord } from "@/lib/books/types";
@@ -16,10 +16,10 @@ export async function GET(
   }
 
   const settings = await getSettings();
-  const stream = streamMetadataProviders(
-    { isbn: book.isbn, title: book.title, author: book.author },
+  const stream = streamSimilarBooks(
+    { title: book.title, author: book.author },
     settings.metadataProviders,
-    settings.metadataCandidateLimit
+    12
   );
   return ndjsonResponse(stream);
 }
