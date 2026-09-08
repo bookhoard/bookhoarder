@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/bookhoard/bookhoarder/compare/v0.20.0...v0.21.0) (2026-09-08)
+
+
+### Features
+
+* implement streaming response for trending books and add metadata provider selection in settings ([79001a7](https://github.com/bookhoard/bookhoarder/commit/79001a7c67fd15c351a75d2d475b0f9e6c0f7ea5))
+
 ## [0.20.0](https://github.com/bookhoard/bookhoarder/compare/v0.19.0...v0.20.0) (2026-09-06)
 
 
