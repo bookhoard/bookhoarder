@@ -1,0 +1,89 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommitsDisabled"],
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "timezone": "Europe/Istanbul",
+  "schedule": ["before 6am on monday"],
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 8,
+  "prHourlyLimit": 2,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "postUpdateOptions": ["pnpmDedupe"],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"],
+    "labels": ["dependencies", "security"]
+  },
+  "osvVulnerabilityAlerts": true,
+  "packageRules": [
+    {
+      "description": "Auto-merge patch/minor devDependency updates once CI passes; runtime deps and majors always wait for review.",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor", "pin", "digest"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Never auto-merge majors, regardless of dep type.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["dependencies", "major-update"]
+    },
+    {
+      "description": "Group AWS SDK packages so they bump together.",
+      "groupName": "AWS SDK",
+      "matchPackageNames": ["@aws-sdk/**"]
+    },
+    {
+      "description": "Group Cloudflare tooling — wrangler and opennextjs need to stay compatible with each other.",
+      "groupName": "Cloudflare tooling",
+      "matchPackageNames": ["wrangler", "@opennextjs/cloudflare", "miniflare"]
+    },
+    {
+      "description": "Group ESLint and its plugins.",
+      "groupName": "ESLint",
+      "matchPackageNames": ["eslint", "eslint-config-next", "@eslint/**", "eslint-plugin-**", "eslint-import-resolver-**"]
+    },
+    {
+      "description": "Group Vitest/testing-library packages.",
+      "groupName": "test tooling",
+      "matchPackageNames": ["vitest", "@vitejs/**", "@testing-library/**", "jsdom"]
+    },
+    {
+      "description": "Group @types/* type-definition bumps.",
+      "groupName": "type definitions",
+      "matchPackageNames": ["@types/**"]
+    },
+    {
+      "description": "Group Tailwind packages.",
+      "groupName": "Tailwind",
+      "matchPackageNames": ["tailwindcss", "@tailwindcss/**", "tw-animate-css", "tailwind-merge"]
+    },
+    {
+      "description": "Next.js and React move together and can break the app — keep as a single reviewed PR, never auto-merge.",
+      "groupName": "Next.js and React",
+      "matchPackageNames": ["next", "react", "react-dom", "eslint-config-next", "@types/react", "@types/react-dom"],
+      "automerge": false
+    },
+    {
+      "description": "GitHub Actions: group and allow digest/patch auto-merge, keep majors reviewed.",
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["patch", "minor", "digest"],
+      "automerge": true
+    },
+    {
+      "description": "Docker base image: PR only, never auto-merge — review runtime image bumps manually.",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "automerge": false,
+      "groupName": "Docker base images"
+    }
+  ]
+}
