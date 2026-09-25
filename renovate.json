@@ -5,7 +5,6 @@
   "semanticCommitType": "chore",
   "semanticCommitScope": "deps",
   "timezone": "Europe/Istanbul",
-  "schedule": ["before 6am on monday"],
   "dependencyDashboard": true,
   "labels": ["dependencies"],
   "prConcurrentLimit": 8,
