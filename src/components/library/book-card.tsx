@@ -12,7 +12,7 @@ import {
   Send,
   Trash2,
 } from "lucide-react";
-import { BookTile, bookTileClassName } from "./book-tile";
+import { BookTile, bookTileClassName, tileEntranceStyle } from "./book-tile";
 import { EditBookDrawer } from "./edit-book-drawer";
 import { RateDialog } from "./rate-dialog";
 import { FetchMetadataDialog } from "./fetch-metadata-dialog";
@@ -58,9 +58,11 @@ interface BookCardProps {
   selected?: boolean;
   onSelect: (book: Book) => void;
   actions: BookCardActions;
+  /** Staggers the entrance animation so tiles don't all fade in at once. */
+  index?: number;
 }
 
-export function BookCard({ book, selected, onSelect, actions }: BookCardProps) {
+export function BookCard({ book, selected, onSelect, actions, index = 0 }: BookCardProps) {
   const {
     shelves,
     onToggleShelf,
@@ -101,6 +103,7 @@ export function BookCard({ book, selected, onSelect, actions }: BookCardProps) {
               }
             }}
             className={bookTileClassName(selected)}
+            style={tileEntranceStyle(index)}
           />
         }
       >

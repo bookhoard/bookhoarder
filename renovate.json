@@ -30,6 +30,14 @@
       "platformAutomerge": true
     },
     {
+      "description": "Auto-merge patch updates for runtime deps too once CI passes. Next.js/React and Docker rules below still override this.",
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
       "description": "Never auto-merge majors, regardless of dep type.",
       "matchUpdateTypes": ["major"],
       "automerge": false,
