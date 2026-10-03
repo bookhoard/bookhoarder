@@ -69,13 +69,14 @@ export function BookGrid({
         <>
           <BookGridLayout>
             {currentPage === 1 && leadingSlot}
-            {pageBooks.map((book) => (
+            {pageBooks.map((book, index) => (
               <BookCard
                 key={book.id}
                 book={book}
                 selected={book.id === selectedId}
                 onSelect={onSelect}
                 actions={actions}
+                index={index}
               />
             ))}
           </BookGridLayout>
