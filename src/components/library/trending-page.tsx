@@ -6,11 +6,34 @@ import { cn } from "@/lib/utils";
 import { TRENDING_PERIODS, type TrendingPeriod } from "@/lib/trending";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { BookGridLayout } from "./book-grid";
-import { BookTile, bookTileClassName } from "./book-tile";
+import { BookTile, bookTileClassName, tileEntranceStyle } from "./book-tile";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { readNdjsonStream } from "@/lib/metadata/ndjson-client";
 import { discoveredBookUrl } from "@/lib/metadata/source-url";
 import type { DiscoveredBook, ProviderResultChunk } from "@/lib/metadata/types";
+
+// A skeleton grid instead of a plain spinner while results load — each
+// tile pulses in a staggered wave rather than all at once, so it reads as
+// "still working" rather than a single frozen frame.
+function TrendingGridSkeleton() {
+  return (
+    <div role="status" aria-label="Loading trending books">
+      <BookGridLayout>
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div key={i} className="w-full p-2 sm:w-40 sm:shrink-0">
+            <Skeleton
+              className="aspect-[2/3] w-full rounded-lg"
+              style={{ animationDelay: `${(i % 6) * 75}ms` }}
+            />
+            <Skeleton className="mt-3 h-3.5 w-4/5 rounded" style={{ animationDelay: `${(i % 6) * 75}ms` }} />
+            <Skeleton className="mt-2 h-3 w-2/5 rounded" style={{ animationDelay: `${(i % 6) * 75}ms` }} />
+          </div>
+        ))}
+      </BookGridLayout>
+    </div>
+  );
+}
 
 export function TrendingPage() {
   useDocumentTitle("Trending");
@@ -68,10 +91,7 @@ export function TrendingPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-24 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
-          Loading trending books…
-        </div>
+        <TrendingGridSkeleton />
       ) : books.length === 0 ? (
         <Empty className="border py-24">
           <EmptyHeader>
@@ -84,13 +104,14 @@ export function TrendingPage() {
       ) : (
         <>
           <BookGridLayout>
-            {books.map((book) => (
+            {books.map((book, index) => (
               <a
                 key={`${book.source}:${book.key}`}
                 href={discoveredBookUrl(book)}
                 target="_blank"
                 rel="noreferrer"
                 className={bookTileClassName()}
+                style={tileEntranceStyle(index)}
               >
                 <BookTile
                   title={book.title}
