@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.22.0](https://github.com/bookhoard/bookhoarder/compare/v0.21.0...v0.22.0) (2026-10-03)
+
+
+### Features
+
+* add staggered entrance animation for book tiles in trending page and book grid ([06c957d](https://github.com/bookhoard/bookhoarder/commit/06c957d32799caceda81273c0eedc1d5fbcdbb46))
+* **deps:** enable auto-merging of patch updates for runtime dependencies ([f4744d7](https://github.com/bookhoard/bookhoarder/commit/f4744d7e800e6ae2c5a3ac66cbe5ba5928fd1522))
+
+
+### Bug Fixes
+
+* **deps:** update dependency nodemailer to v10 [security] ([#39](https://github.com/bookhoard/bookhoarder/issues/39)) ([b4e8f17](https://github.com/bookhoard/bookhoarder/commit/b4e8f171d47fb6f525e719731ccccd4f1f0548bd))
+* **deps:** update next.js and react ([#37](https://github.com/bookhoard/bookhoarder/issues/37)) ([559b7d4](https://github.com/bookhoard/bookhoarder/commit/559b7d44e02eaad3a6a0bdeed0c3ad12704d194f))
+
 ## [0.21.0](https://github.com/bookhoard/bookhoarder/compare/v0.20.0...v0.21.0) (2026-09-08)
 
 
