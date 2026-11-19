@@ -18,4 +18,6 @@ if [ -f .env ]; then
   trap 'mv .env.hidden-for-cloudflare-build .env' EXIT
 fi
 
-CLOUDFLARE_BUILD=true npx opennextjs-cloudflare build
+# OpenNext rejects patch releases newer than the ones it has tested. The
+# app builds and runs fine on them, so skip that gate until OpenNext catches up.
+CLOUDFLARE_BUILD=true npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion
