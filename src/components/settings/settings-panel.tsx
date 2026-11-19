@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
-import { User, Moon, Sparkles, TrendingUp, Mail, Loader2, Users, Eye, EyeOff, Copy, LayoutGrid, Archive } from "lucide-react";
+import { User, Moon, Sparkles, TrendingUp, Mail, Loader2, Users, Eye, EyeOff, Copy, LayoutGrid, Archive, Plug } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { formatBytes } from "@/lib/format";
 import { DEMO_MODE } from "@/lib/demo-mode";
 import { useLibraryShell } from "@/components/library/library-shell-context";
 import { ManageProfilesPanel } from "./manage-profiles-panel";
+import { McpPanel } from "./mcp-panel";
 import { PROFILE_COLORS, type PublicProfile } from "@/lib/profiles/types";
 import type { PublicAppSettings, SmtpEncryption } from "@/lib/settings/types";
 import { METADATA_PROVIDER_INFO, type MetadataProviderId } from "@/lib/metadata/types";
@@ -23,7 +24,7 @@ interface SettingsPanelProps {
   profile: PublicProfile;
 }
 
-type Category = "profile" | "theme" | "profiles" | "library" | "metadata" | "trending" | "email" | "backup";
+type Category = "profile" | "theme" | "profiles" | "library" | "metadata" | "trending" | "email" | "mcp" | "backup";
 
 const CATEGORIES: {
   id: Category;
@@ -38,6 +39,7 @@ const CATEGORIES: {
   { id: "metadata", label: "Metadata", icon: Sparkles, adminOnly: true },
   { id: "trending", label: "Trending", icon: TrendingUp, adminOnly: true },
   { id: "email", label: "E-Reader Email", icon: Mail, adminOnly: true },
+  { id: "mcp", label: "MCP", icon: Plug },
   { id: "backup", label: "Backup", icon: Archive, adminOnly: true },
 ];
 
@@ -827,6 +829,15 @@ export function SettingsPanel({ settings, profile }: SettingsPanelProps) {
             </SettingRow>
           </SectionCard>
           </div>
+        )}
+
+        {category === "mcp" && (
+          <SectionCard
+            title="MCP"
+            description="Let Claude and other AI assistants work with your library."
+          >
+            <McpPanel />
+          </SectionCard>
         )}
 
         {category === "backup" && (

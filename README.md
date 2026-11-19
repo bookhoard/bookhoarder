@@ -70,6 +70,9 @@ Full docs are at [docs.bookhoarder.dev](https://docs.bookhoarder.dev) (source: [
 - Installable as a PWA for quick access from your phone or desktop home screen
 - OPDS catalog feed (`/opds`) for browsing and downloading straight from any
   OPDS-compatible e-reader app — the URL is in Settings → E-Reader Email
+- Built-in MCP endpoint, so Claude and other MCP clients can search your
+  library, fix metadata, and organize shelves (Settings → MCP shows how to
+  connect)
 - Pluggable storage driver: local filesystem or S3-compatible object storage,
   including a configurable directory prefix for sharing a bucket with other
   apps (see `docker-compose.yml` for a MinIO-backed setup)
