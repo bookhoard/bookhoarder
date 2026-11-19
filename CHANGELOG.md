@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.23.0](https://github.com/bookhoard/bookhoarder/compare/v0.22.0...v0.23.0) (2026-11-19)
+
+
+### Features
+
+* add MCP endpoint so Claude can manage the library ([6476cbf](https://github.com/bookhoard/bookhoarder/commit/6476cbf0c73c77266e3a22e772517f631ef6624b))
+
+
+### Bug Fixes
+
+* skip OpenNext Next.js version gate in Cloudflare build ([af57627](https://github.com/bookhoard/bookhoarder/commit/af57627f0189a93919c6f44025a59428eaf928a2))
+
 ## [0.22.0](https://github.com/bookhoard/bookhoarder/compare/v0.21.0...v0.22.0) (2026-10-03)
 
 
