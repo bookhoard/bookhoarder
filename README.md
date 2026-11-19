@@ -77,6 +77,16 @@ Full docs are at [docs.bookhoarder.dev](https://docs.bookhoarder.dev) (source: [
   including a configurable directory prefix for sharing a bucket with other
   apps (see `docker-compose.yml` for a MinIO-backed setup)
 
+## Use with Claude (MCP)
+
+Bookhoarder has a built-in MCP endpoint at `/api/mcp`. It lets Claude search your library, fix metadata, add books, and organize shelves. Add it to Claude Code with:
+
+```sh
+claude mcp add --transport http bookhoarder http://localhost:3000/api/mcp
+```
+
+There is no auth on this endpoint, so only expose it on a private network (like Tailscale). Set `MCP_PROFILE_ID` to choose which profile it acts as. Settings → MCP has the full tool list and setup for Claude Desktop.
+
 ## License
 
 Bookhoarder is licensed under the [GNU Affero General Public License v3.0](LICENSE).
